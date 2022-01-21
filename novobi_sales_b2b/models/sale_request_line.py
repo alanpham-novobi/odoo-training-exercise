@@ -20,19 +20,33 @@ class SaleRequestLine(models.Model):
     company_id = fields.Many2one(
         related='request_id.company_id', string='Company', store=True, index=True)
     price_unit = fields.Float(
-        'Unit Price', required=True, digits='Product Price', default=0.0)
+        'Unit Price', required=True, digits='Product Price', compute='_compute_price_unit')
     product_uom_qty = fields.Float(
-        string='Quantity', digits='Product Unit of Measure', required=True, default=1.0)
+        string='Demand Quantity', digits='Product Unit of Measure', required=True, default=1.0)
+    approve_product_qty = fields.Float(
+        string='Approve Quantity', digits='Product Unit of Measure'
+    )
     price_subtotal = fields.Monetary(
         compute='_compute_amount', string='Subtotal', store=True)
 
-    @api.depends('product_uom_qty', 'price_unit', 'currency_id')
+    @api.depends('approve_product_qty', 'price_unit', 'currency_id')
     def _compute_amount(self):
-        """
-        Compute the amounts of the SO line.
-        """
         for line in self:
-            price = line.price_unit * line.product_uom_qty
+            price = line.price_unit * line.approve_product_qty
             line.update({
                 'price_subtotal': price
             })
+
+    @api.depends('product_id', 'request_id.pricelist_id')
+    def _compute_price_unit(self):
+        for record in self:
+            record.update({
+                'price_unit': record.product_id.with_context(pricelist=self.request_id.pricelist_id.id).price
+            })
+
+    @api.onchange('approve_product_qty')
+    def _onchange_product_qty(self):
+        self.ensure_one()
+        if self.approve_product_qty > self.product_uom_qty:
+            raise UserError(
+                _('Invalid approve quantity. Approve quantity must be smaller or equal to demand quantity'))

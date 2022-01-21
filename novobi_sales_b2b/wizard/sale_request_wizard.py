@@ -9,6 +9,7 @@ class SaleRequestWizard(models.TransientModel):
     _description = 'Approve a batch of requests'
 
     def approve_request(self):
+        # None key in dict
         request_ids = self.env.context['request_ids']
         requests = self.env['sale.request'].browse(request_ids)
         if requests.filtered(lambda sr: sr.request_state != 'pending'):

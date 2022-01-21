@@ -15,7 +15,6 @@
                     <field name="amount_total" readonly="1"></field>
                     <field name="amount_item" readonly="1"></field>
                     <field name="request_state" widget="badge"
-                        decoration-info="request_state == 'draft'" 
                         decoration-primary="request_state == 'pending'" 
                         decoration-success="request_state == 'approved'" 
                         decoration-danger="request_state == 'rejected'"
@@ -32,10 +31,10 @@
             <field name="arch" type="xml">
                 <form string="Request Order" class="o_sale_order" js_class="sale_discount_form">
                     <header>
-                        <button name="make_approved" string="Approve" type="object" class="oe_highlight"></button>
-                        <button name="make_rejected" string="Reject" type="object" class="oe_highlight"></button>
-                        <button name="make_cancelled" string="Cancel" type="object" class="btn"></button>
-                        <field name="request_state" widget="statusbar" statusbar_visible="draft,pending,approved,rejected,cancelled"/>
+                        <button name="make_approved" string="Approve" type="object" class="oe_highlight" attrs="{'invisible': [('request_state', '!=', 'pending')]}"></button>
+                        <button name="make_rejected" string="Reject" type="object" class="oe_highlight" attrs="{'invisible': [('request_state', '!=', 'pending')]}"></button>
+                        <button name="make_cancelled" string="Cancel" type="object" class="btn" attrs="{'invisible': [('request_state', '=', 'cancelled')]}"></button>
+                        <field name="request_state" widget="statusbar" statusbar_visible="pending,approved,rejected,cancelled"/>
                     </header>
                     <sheet>
                         <div class="oe_button_box" name="button_box">
@@ -62,7 +61,7 @@
                             </group>
                             <group name="request_details">
                                 <field name="date_request" readonly="1"/>
-                                <field name="date_order" readonly="1" attrs="{'invisible': [('request_state', '!=', 'approved')]}"/>
+                                <field name="date_confirm" readonly="1" attrs="{'invisible': [('request_state', '==', 'pending')]}"/>
                                 <field name="pricelist_id"/>
                             </group>
                         </group>
@@ -78,9 +77,9 @@
 
                                         <field name="product_id" string="Product"/>
                                         <field name="name" widget="section_and_note_text" string="Description" optional="show"/>
-                                        <field name="product_uom_qty" string="Quantity"/>
+                                        <field name="product_uom_qty" string="Demand Quantity"/>
+                                        <field name="approve_product_qty" string="Approve Quantity"/>
                                         <field name="price_unit" string="Unit Price"/>
-                                        <!-- <field name="discount" string="Disc.%" optional="show" widget="product_discount"/> -->
                                         <field name="price_subtotal"/>
                                     </tree>
                                 </field>
@@ -102,6 +101,20 @@
             </field>
         </record>
         
+        <!-- Pivot view -->
+        <record id="sale_request_view_pivot" model="ir.ui.view">
+            <field name="name">sale.request.pivot</field>
+            <field name="model">sale.request</field>
+            <field name="arch" type="xml">
+                <pivot>
+                    <field name="name" type="row"/>
+                    <field name="request_state" type="col"/>
+                    <field name="amount_item" type="col"/>
+                    <field name="amount_total" type="measure"/>
+                </pivot>
+            </field>
+        </record>
+
         <record id="sale_request_action" model="ir.actions.act_window">
             <field name="name">Sales Requests</field>
             <field name="type">ir.actions.act_window</field>
@@ -109,7 +122,8 @@
             <field name="view_mode">tree,form,pivot</field>
             <field name="view_ids" eval="[(5,0,0),
                 (0,0,{'view_mode':'tree', 'view_id': ref('novobi_sales_b2b.sale_request_view_tree')}),
-                (0,0,{'view_mode':'form', 'view_id': ref('novobi_sales_b2b.sale_request_view_form')})]"/>
+                (0,0,{'view_mode':'form', 'view_id': ref('novobi_sales_b2b.sale_request_view_form')}),
+                (0,0,{'view_mode':'pivot', 'view_id': ref('novobi_sales_b2b.sale_request_view_pivot')})]"/>
         </record>
 
         <record id="open_order_view_form_action" model="ir.actions.act_window">

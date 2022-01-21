@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="portal_sale_requests" name="My Request Orders">
+        <link href="/novobi_sales_b2b/static/src/css/page.css" rel="stylesheet" type="text/css"/>
+        <link href="/novobi_sales_b2b/static/src/css/page.scss" rel="stylesheet" type="text/scss"/>
+        <script src="/novobi_sales_b2b/static/src/css/app.js" type="text/javascript" />
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Request Sales Orders</t>
+            </t>
+            <t class="text-right">
+                <button class="btn btn-primary create-sale-request" type="button">Create Sale Request</button>
+            </t>
+            <br></br>
+            <t t-if="not requests">
+                <p>There are currently no requests for your account.</p>
+            </t>
+            <t t-if="requests" t-call="portal.portal_table">
+                <thead>
+                    <tr class="active">
+                        <th>
+                            <span class='d-none d-md-inline'>Request Sales Order #</span>
+                            <span class='d-block d-md-none'>Ref.</span>
+                        </th>
+                        <th class="text-left">Request Date</th>
+                        <th class="text-left">Salesperson</th>
+                        <th class="text-left">Total</th>
+                        <th class="text-left">Sales</th>
+                        <th class="text-left">Fulfillment</th>
+                        <th class="text-left">Items</th>
+                        <th class="text-left">Tags</th>
+                    </tr>
+                </thead>
+                <t t-foreach="requests" t-as="request">
+                    <tr>
+                        <td><a t-att-href="request.get_portal_url(request.id)"><t t-esc="request.name"/></a></td>
+                        <td class="text-left">
+                            <span t-field="request.date_request" t-options="{'widget': 'date'}"/>&amp;nbsp;
+                            <span class='d-none d-md-inline' t-field="request.date_request" t-options="{'time_only': True}"/>
+                        </td>
+                        <td class="text-left"><span t-field="request.sale_user_id"/></td>
+                        <td class="text-left"><span t-field="request.amount_total"/></td>
+                        <td class="text-left">
+                            <span t-if="request.request_state == 'pending'"  class="badge badge-pill badge-primary">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Pending" title="Pending"/>Pending
+                            </span>
+                            <span t-if="request.request_state == 'approved'"  class="badge badge-pill badge-success">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Approved" title="Approved"/>Approved
+                            </span>
+                            <span t-elif="request.request_state == 'rejected'"  class="badge badge-pill badge-danger">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Rejected" title="Rejected"/>Rejected
+                            </span>
+                            <span t-elif="request.request_state == 'cancelled'"  class="badge badge-pill badge-secondary">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Cancelled" title="Cancelled"/>Cancelled
+                            </span>
+                        </td>
+                        <td t-if="request.request_state == 'approved'" class="text-left">
+                            <span t-if="request.fulfillment_state == 'ready'"  class="badge badge-pill badge-info">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Ready" title="Ready"/>Ready
+                            </span>
+                            <span t-if="request.fulfillment_state == 'waiting'"  class="badge badge-pill badge-primary">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Waiting" title="Waiting"/>Waiting
+                            </span>
+                            <span t-elif="request.fulfillment_state == 'done'"  class="badge badge-pill badge-success">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Done" title="Done"/>Done
+                            </span>
+                        </td>
+                        <td t-else="" class="text-left"></td>
+                        <td class="text-left"><span t-field="request.amount_item"/></td>
+                        <td class="text-left"><span t-field="request.tag_ids"/></td>
+                    </tr>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="portal_sale_request_detailed" name="Request Orders Detailed">
+        <link href="/novobi_sales_b2b/static/src/css/page.css" rel="stylesheet" type="text/css"/>
+        <link href="/novobi_sales_b2b/static/src/css/page.scss" rel="stylesheet" type="text/scss"/>
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar"></t>
+            <t><b>Salesperson: </b><span t-field="sale_request.sale_user_id"></span></t>
+            <br></br>
+            <t><b>SR: </b><span t-field="sale_request.name"></span></t>
+            <br></br>
+            <t t-call="portal.portal_table">
+                <thead>
+                    <tr class="active">
+                        <th class="text-left">Request Sales Orders: <t t-esc="sale_request.name"></t></th>
+                        <th class="text-left">Sales: 
+                            <span t-if="sale_request.request_state == 'pending'"  class="badge badge-pill badge-primary">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Pending" title="Pending"/>Pending
+                            </span>
+                            <span t-elif="sale_request.request_state == 'approved'"  class="badge badge-pill badge-success">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Approved" title="Approved"/>Approved
+                            </span>
+                            <span t-elif="sale_request.request_state == 'rejected'"  class="badge badge-pill badge-danger">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Rejected" title="Rejected"/>Rejected
+                            </span>
+                            <span t-elif="sale_request.request_state == 'cancelled'"  class="badge badge-pill badge-secondary">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Cancelled" title="Cancelled"/>Cancelled
+                            </span>
+                        </th>
+                        <t t-if="sale_request.request_state == 'approved'">
+                            <th class="text-left">Fulfillment:
+                            <span t-if="sale_request.fulfillment_state == 'ready'"  class="badge badge-pill badge-info">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Ready" title="Ready"/>Ready
+                            </span>
+                            <span t-if="sale_request.fulfillment_state == 'waiting'"  class="badge badge-pill badge-primary">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Waiting" title="Waiting"/>Waiting
+                            </span>
+                            <span t-elif="sale_request.fulfillment_state == 'done'"  class="badge badge-pill badge-success">
+                                <i class="fa fa-fw fa-check" role="img" aria-label="Done" title="Done"/>Done
+                            </span>
+                        </th>
+                        </t>
+                    </tr>
+                </thead>
+            </t>
+            <t t-if="request_lines" t-call="portal.portal_table">
+                <thead>
+                    <tr class="active">
+                        <th class="text-left">Product</th>
+                        <th class="text-left">Unit Price</th>
+                        <th class="text-left">Quantity</th>
+                        <th class="text-left">Approved Quantity</th>
+                        <th class="text-left">Sub Total</th>
+                    </tr>
+                </thead>
+                <t t-foreach="request_lines" t-as="line">
+                    <tr>
+                        <td class="text-left"><span t-field="line.product_id"/></td>
+                        <td class="text-left"><span t-field="line.price_unit"/></td>
+                        <td class="text-left"><span t-field="line.product_uom_qty"/></td>
+                        <td class="text-left"><span t-field="line.approve_product_qty"/></td>
+                        <td class="text-left"><span t-field="line.price_subtotal"/></td>
+                    </tr>
+                </t>
+            </t>
+            <br/>
+            <t><b>Timeline</b></t>
+            <ul>
+                <t t-if="sale_request.request_state == 'approved'">
+                    <t t-if="sale_order.state == 'sale'">
+                        <li><b>Sale order is Confirmed:</b> 
+                            <t>
+                                <span t-field="sale_order.date_order" t-options="{'widget': 'date'}"/>&amp;nbsp;
+                                <span class='d-none d-md-inline' t-field="sale_order.date_order" t-options="{'time_only': True}"/>
+                            </t>
+                        </li>
+                    </t>
+                    <li><b>Sale order is Created:</b> 
+                        <t>
+                            <span t-field="sale_order.create_date" t-options="{'widget': 'date'}"/>&amp;nbsp;
+                            <span class='d-none d-md-inline' t-field="sale_order.create_date" t-options="{'time_only': True}"/>
+                        </t>
+                    </li>
+                    <li><b>Sale request is Approved:</b> 
+                        <t>
+                            <span t-field="sale_request.date_request" t-options="{'widget': 'date'}"/>&amp;nbsp;
+                            <span class='d-none d-md-inline' t-field="sale_request.date_confirm" t-options="{'time_only': True}"/>
+                        </t>
+                    </li>
+                </t>
+                <t t-if="sale_request.request_state != 'approved'">
+                    <li><b>Sale request is <t><span t-field="sale_request.request_state"></span></t>:</b>  
+                        <t>
+                            <span t-field="sale_request.date_request" t-options="{'widget': 'date'}"/>&amp;nbsp;
+                            <span class='d-none d-md-inline' t-field="sale_request.date_confirm" t-options="{'time_only': True}"/>
+                        </t>
+                    </li>
+                </t>
+                <li><b>Sale request is Created:</b> 
+                    <t>
+                        <span t-field="sale_request.date_request" t-options="{'widget': 'date'}"/>&amp;nbsp;
+                        <span class='d-none d-md-inline' t-field="sale_request.date_request" t-options="{'time_only': True}"/>
+                    </t>
+                </li>
+            </ul>
+        </t>
+    </template>
+</odoo>

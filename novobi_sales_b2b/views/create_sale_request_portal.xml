@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="create_sale_request_form" name="Sales Request Form">
+        <script src="/novobi_sales_b2b/static/src/css/create_order.js" type="text/javascript" />
+        <t t-call="website.layout">
+            <div class="container mt32">
+                <div class="row mt16">
+                    <div class="col-6">
+                        <form method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <div class="form-group">
+                                <label>Select Product</label>
+                                <select class="form-control" name="product_id" id="product_id">
+                                    <t t-foreach="products" t-as="product">
+                                        <option t-att-value="product.id">
+                                            <t t-esc="product.name"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Input Quantity</label>
+                                <input class="form-control" name="product_qty" id="qty">
+                                </input>
+                            </div>
+                            <button type="button" class="btn btn-primary add">Add to card</button>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

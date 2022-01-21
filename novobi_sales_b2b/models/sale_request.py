@@ -1,5 +1,7 @@
 from odoo import api, models, fields, _
 from odoo.exceptions import UserError
+import logging
+logger = logging.getLogger(__name__)
 
 
 class SalesRequest(models.Model):
@@ -13,8 +15,8 @@ class SalesRequest(models.Model):
                        'draft': [('readonly', False)]}, default=lambda self: _('New'))
     date_request = fields.Datetime(
         string='Request Date', required=True, readonly=True, index=True, default=fields.Datetime.now)
-    date_order = fields.Datetime(
-        string='Order Date', readonly=True, index=True)
+    date_confirm = fields.Datetime(
+        string='Confirm Date', readonly=True, index=True)
     company_id = fields.Many2one(
         'res.company', 'Company', required=True, index=True, default=lambda self: self.env.company)
     sale_user_id = fields.Many2one(
@@ -29,7 +31,6 @@ class SalesRequest(models.Model):
         'res.partner', string='Retailer',
         required=True, change_default=True, index=True)
     request_state = fields.Selection([
-        ('draft', 'Draft'),
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
@@ -42,9 +43,10 @@ class SalesRequest(models.Model):
     ], string='Fulfillment Status', default='ready')
     tag_ids = fields.Many2many(
         'crm.tag', string='Tags')
-    order_id = fields.Many2one('sale.order', string='Sale order')
+    order_id = fields.Many2one(
+        'sale.order', string='Sale order', ondelete='cascade')
     request_line = fields.One2many(
-        'sale.request.line', 'request_id', string='Request Lines')
+        'sale.request.line', 'request_id', string='Request Lines', ondelete='cascade')
     amount_total = fields.Monetary(
         string='Total', store=True, compute='_compute_amount_total_item')
     amount_item = fields.Integer(
@@ -66,20 +68,13 @@ class SalesRequest(models.Model):
                 'amount_item': amount_item
             })
 
-    @api.onchange('request_state')
-    def _onchange_order_date(self):
-        self.ensure_one()
-        if self.request_state == 'approved':
-            self.update({
-                'date_order': fields.Datetime.now
-            })
-
     @api.model
     def is_allowed_transition(self, old_state, new_state):
-        allowed = [('draft', 'pending'),
-                   ('pending', 'approved'),
+        allowed = [('pending', 'approved'),
                    ('pending', 'rejected'),
-                   ('pending', 'cancelled')]
+                   ('pending', 'cancelled'),
+                   ('approved', 'cancelled'),
+                   ('rejected', 'cancelled')]
         return (old_state, new_state) in allowed
 
     def change_state(self, new_state):
@@ -95,12 +90,23 @@ class SalesRequest(models.Model):
     def make_approved(self):
         self.change_state('approved')
         self.create_sale_order()
+        self.update({
+            'date_confirm': fields.datetime.now()
+        })
 
     def make_rejected(self):
         self.change_state('rejected')
+        self.update({
+            'date_confirm': fields.datetime.now(),
+            'amount_total': 0.0
+        })
 
     def make_cancelled(self):
         self.change_state('cancelled')
+        self.update({
+            'date_confirm': fields.datetime.now(),
+            'amount_total': 0.0
+        })
 
     def create_sale_order(self):
         sale_request_lines = []
@@ -108,6 +114,9 @@ class SalesRequest(models.Model):
             sale_request_lines.append({
                 'product_id': line.product_id.id,
                 'product_uom_qty': line.product_uom_qty
+            })
+            line.update({
+                'approve_product_qty': line.product_uom_qty
             })
         order_line = [(0, 0, x) for x in sale_request_lines]
         sale_order = {
@@ -144,3 +153,14 @@ class SalesRequest(models.Model):
             }
         })
         return action
+
+    def get_portal_url(self, request_id):
+        if self:
+            portal_url = self[0].get_base_url()
+        else:
+            portal_url = self.env['ir.config_parameter'].sudo(
+            ).get_param('web.base.url')
+        logger.info(portal_url)
+        portal_link = "%s/my/b2b-admin/orders/details?request_id=%s" % (
+            portal_url, request_id)
+        return portal_link
